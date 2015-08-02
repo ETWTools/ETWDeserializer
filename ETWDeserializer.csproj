@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7F165C42-3D08-43E8-8AE1-A83257C1482A}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>ETWDeserializer</RootNamespace>
+    <AssemblyName>ETWDeserializer</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CustomParsers\CustomParserGuids.cs" />
+    <Compile Include="CustomParsers\KernelStackWalkEventParser.cs" />
+    <Compile Include="CustomParsers\KernelTraceControlDbgIdParser.cs" />
+    <Compile Include="CustomParsers\KernelTraceControlImageIdFileVersionParser.cs" />
+    <Compile Include="CustomParsers\KernelTraceControlImageIdParser.cs" />
+    <Compile Include="Deserializer.cs" />
+    <Compile Include="Etw.cs" />
+    <Compile Include="EventMan.cs" />
+    <Compile Include="EventMetadata.cs" />
+    <Compile Include="EventRecordReader.cs" />
+    <Compile Include="EventSourceManifest.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="IEtwWriter.cs" />
+    <Compile Include="IEventTraceOperand.cs" />
+    <Compile Include="IEventTracePropertyOperand.cs" />
+    <Compile Include="MapInformation.cs" />
+    <Compile Include="PropertyMetadata.cs" />
+    <Compile Include="RuntimeEventMetadata.cs" />
+    <Compile Include="Tdh.cs" />
+    <Compile Include="EventTraceOperand.cs" />
+    <Compile Include="EventTraceOperandBuilder.cs" />
+    <Compile Include="EventTraceOperandExpressionBuilder.cs" />
+    <Compile Include="EventTracePropertyOperand.cs" />
+    <Compile Include="TraceEventKey.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

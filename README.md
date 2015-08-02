@@ -1,2 +1,2 @@
 # ETWDeserializer
-General purpose Windows ETW event deserializer library
+A general-purpose efficient ETW deserializing library
