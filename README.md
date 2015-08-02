@@ -1,9 +1,8 @@
 # ETWDeserializer
-======================
 
 ETWDeserializer is a general-purpose Windows ETW event deserialization library. It can decode events from almost all sources of Windows including the Kernel (MOF Classes), Manifest events (those available beyond Windows Vista), XPERF performance profiling events, and .NET EventSource-style events.
 
-NOTE: This is a support library, i.e. the user of this library must setup the boiler-plate code involved in setting up an ETW Session or reading an ETW log file (.ETL). [**ETW2JSON**](http://github.com/ETWTools/ETW2JSON) and [**ETW2SQLite**](http://github.com/ETWTools/ETW2SQLite) are two such applications.
+**NOTE**: This is a support library, i.e. the user of this library must setup the boiler-plate code involved in setting up an ETW Session or reading an ETW log file (.ETL). [**ETW2JSON**](http://github.com/ETWTools/ETW2JSON) and [**ETW2SQLite**](http://github.com/ETWTools/ETW2SQLite) are two such applications.
 
 ## Usage
 
