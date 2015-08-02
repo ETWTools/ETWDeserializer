@@ -12,7 +12,7 @@ Implement the ``IEtwWriter`` interface exposed by the library and add boiler pla
 
 ## Nuget package
 
-This library is available on Nuget -- https://www.nuget.org/packages/ETWDeserializer/1.0.0
+This library is available on Nuget -- https://www.nuget.org/packages/ETWDeserializer/1.1.0
 
 ## Building ETWDeserializer
 
