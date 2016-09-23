@@ -149,6 +149,11 @@
 
         private unsafe IEventTraceOperand BuildOperand(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, int metadataTableIndex)
         {
+            if (eventRecord->ProviderId == CustomParserGuids.KernelTraceControlMetaDataGuid && eventRecord->Opcode == 32)
+            {
+                return EventTraceOperandBuilder.Build((TRACE_EVENT_INFO*)eventRecord->UserData, metadataTableIndex);
+            }
+
             IEventTraceOperand operand;
             if ((operand = BuildOperandFromTdh(eventRecord, metadataTableIndex)) == null)
             {
