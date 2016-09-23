@@ -35,13 +35,7 @@
             this.totalChunks = totalChunks;
         }
 
-        public void AddChunk(string schemaChunk)
-        {
-            this.chunkBuilder.Append(schemaChunk);
-            ++this.chunksReceived;
-        }
-
-        public bool IsComplete {  get { return this.chunksReceived == this.totalChunks; } }
+        public bool IsComplete => this.chunksReceived == this.totalChunks;
 
         public instrumentationManifest Schema
         {
@@ -66,22 +60,29 @@
                 return this.manifest;
             }
         }
-        
-        public Guid ProviderGuid { get { return this.providerGuid; } }
 
-        public byte Format { get { return this.format; } }
+        public Guid ProviderGuid => this.providerGuid;
 
-        public byte MajorVersion { get { return this.majorVersion; } }
+        public byte Format => this.format;
 
-        public byte MinorVersion { get { return this.minorVersion; } }
+        public byte MajorVersion => this.majorVersion;
 
-        public byte Magic { get { return this.magic; } }
+        public byte MinorVersion => this.minorVersion;
 
-        public ushort TotalChunks { get { return this.totalChunks; } }
+        public byte Magic => this.magic;
+
+        public ushort TotalChunks => this.totalChunks;
+
+        public void AddChunk(string schemaChunk)
+        {
+            this.chunkBuilder.Append(schemaChunk);
+            ++this.chunksReceived;
+        }
 
         public override bool Equals(object obj)
         {
-            return obj is EventSourceManifest && this.Equals((EventSourceManifest)obj);
+            var other = obj as EventSourceManifest;
+            return other != null && this.Equals(other);
         }
 
         public override int GetHashCode()

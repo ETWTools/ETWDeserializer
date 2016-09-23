@@ -11,7 +11,7 @@
         public static Expression Build(
             IEventTraceOperand operand,
             ParameterExpression eventRecordReader,
-            ParameterExpression eventRecordWriter, 
+            ParameterExpression eventRecordWriter,
             ParameterExpression eventMetadataTable,
             ParameterExpression runtimeMetadata)
         {
@@ -103,6 +103,7 @@
 
                             readValue = Call(this.eventRecordReader, inType.ReadMethodInfo(this.eventRecordReader.Type, length.Type), length);
                         }
+
                         /* otherwise, it's just a normal call, no args */
                         else
                         {
@@ -147,7 +148,6 @@
                     list.Add(this.eventRecordWriter.Call("WritePropertyEnd"));
                 }
 
-
                 return list.Count == 0 ? (Expression)Expression.Empty() : Expression.Block(variables, list);
             }
 
@@ -159,18 +159,16 @@
             private static Expression For(ParameterExpression parameter, Expression initial, Expression condition, Expression increment, params Expression[] body)
             {
                 var breakLabel = Expression.Label("break");
-                var loop = Expression.Block(new[] { parameter },
+                var loop = Expression.Block(
+                    new[] { parameter },
                     Expression.Assign(parameter, initial),
                     Expression.Loop(
                         Expression.IfThenElse(
                             condition,
                             Expression.Block(
-                                body.Concat(new[] { increment })
-                                ),
-                            Expression.Break(breakLabel)
-                            ),
-                        breakLabel)
-                    );
+                                body.Concat(new[] { increment })),
+                            Expression.Break(breakLabel)),
+                        breakLabel));
 
                 return loop;
             }

@@ -28,20 +28,20 @@
         public UCHAR Opcode;
         public USHORT Task;
         public ULONGLONG Keyword;
-        public ULONG64 ProcessorTime; // Processor Clock 
+        public ULONG64 ProcessorTime; // Processor Clock
         public GUID ActivityId; // Activity Id
         public UCHAR ProcessorNumber;
         public UCHAR Alignment;
         public USHORT LoggerId;
         public USHORT ExtendedDataCount; // Number of extended // data items
         public USHORT UserDataLength; // User data length
-        internal EVENT_HEADER_EXTENDED_DATA_ITEM* ExtendedData; // Pointer to an array of extended data items
+        public EVENT_HEADER_EXTENDED_DATA_ITEM* ExtendedData; // Pointer to an array of extended data items
         public byte* UserData; // Pointer to user data
         public byte* UserDataFixed; // NOTE: actual field is "UserContext", but since we don't use it, using it for other purposes :-)
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct EVENT_HEADER_EXTENDED_DATA_ITEM
+    public struct EVENT_HEADER_EXTENDED_DATA_ITEM
     {
         public USHORT Reserved1;
         public USHORT ExtType;
@@ -49,7 +49,7 @@
         public USHORT DataSize;
         public ULONGLONG DataPtr;
     }
-    
+
     internal static class Etw
     {
         internal const USHORT EVENT_HEADER_EXT_TYPE_RELATED_ACTIVITYID = 0x0001;

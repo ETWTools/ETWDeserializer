@@ -23,7 +23,7 @@
             int length = 0;
             byte* ptr = this.eventRecord->UserData;
             long maxLength = this.eventRecord->UserDataLength - (this.eventRecord->UserData - this.eventRecord->UserDataFixed);
-            
+
             while (!(ptr[length] == 0 && ptr[length + 1] == 0) && length < maxLength)
             {
                 ++length;
@@ -136,7 +136,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe sbyte ReadInt8()
         {
-            sbyte value = *((sbyte*)this.eventRecord->UserData);
+            sbyte value = *(sbyte*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(sbyte);
             return value;
         }
@@ -158,7 +158,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe short ReadInt16()
         {
-            short value = *((short*)this.eventRecord->UserData);
+            short value = *(short*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(short);
             return value;
         }
@@ -169,7 +169,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe ushort ReadUInt16()
         {
-            ushort value = *((ushort*)this.eventRecord->UserData);
+            ushort value = *(ushort*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(ushort);
             return value;
         }
@@ -180,7 +180,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe int ReadInt32()
         {
-            int value = *((int*)this.eventRecord->UserData);
+            int value = *(int*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(int);
             return value;
         }
@@ -191,7 +191,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe uint ReadUInt32()
         {
-            uint value = *((uint*)this.eventRecord->UserData);
+            uint value = *(uint*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(uint);
             return value;
         }
@@ -202,7 +202,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe long ReadInt64()
         {
-            long value = *((long*)this.eventRecord->UserData);
+            long value = *(long*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(long);
             return value;
         }
@@ -213,7 +213,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe ulong ReadUInt64()
         {
-            ulong value = *((ulong*)this.eventRecord->UserData);
+            ulong value = *(ulong*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(ulong);
             return value;
         }
@@ -224,7 +224,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe float ReadFloat()
         {
-            float value = *((float*)this.eventRecord->UserData);
+            float value = *(float*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(float);
             return value;
         }
@@ -235,7 +235,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe double ReadDouble()
         {
-            double value = *((double*)this.eventRecord->UserData);
+            double value = *(double*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(double);
             return value;
         }
@@ -246,7 +246,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool ReadBoolean()
         {
-            bool value = *((int*)this.eventRecord->UserData) != 0;
+            bool value = *(int*)this.eventRecord->UserData != 0;
             this.eventRecord->UserData += sizeof(int);
             return value;
         }
@@ -305,7 +305,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe Guid ReadGuid()
         {
-            Guid value = *((Guid*)this.eventRecord->UserData);
+            Guid value = *(Guid*)this.eventRecord->UserData;
             this.eventRecord->UserData += sizeof(Guid);
             return value;
         }
@@ -449,7 +449,7 @@
 
         /// <summary>
         /// Reader for TDH_INTYPE_HEXDUMP
-        /// 
+        ///
         /// https://msdn.microsoft.com/en-us/library/windows/desktop/aa363800(v=vs.85).aspx
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -464,12 +464,11 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe string ReadWbemSid()
         {
-            int pointerSize = ((eventRecord->Flags & Etw.EVENT_HEADER_FLAG_32_BIT_HEADER) == Etw.EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+            int pointerSize = (eventRecord->Flags & Etw.EVENT_HEADER_FLAG_32_BIT_HEADER) == Etw.EVENT_HEADER_FLAG_32_BIT_HEADER ? 4 : 8;
             this.eventRecord->UserData += pointerSize * 2;
             return this.ReadSid();
         }
 
-        #region private helper methods
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe string ReadAnsiStringHelper(int length)
         {
@@ -488,9 +487,8 @@
         private unsafe string ReadUnicodeStringHelper(int length)
         {
             string value = new string((char*)this.eventRecord->UserData, 0, length / 2);
-            this.eventRecord->UserData += (value.Length) * 2;
+            this.eventRecord->UserData += value.Length * 2;
             return value;
         }
-        #endregion
     }
 }

@@ -2,51 +2,52 @@
 {
     using System;
 
-    internal class KernelTraceControlImageIdParser
+    internal sealed class KernelTraceControlImageIdParser
     {
-        private static readonly EventMetadata eventMetadata;
+        private static readonly EventMetadata EventMetadata;
 
-        private static readonly PropertyMetadata imageBase;
+        private static readonly PropertyMetadata ImageBase;
 
-        private static readonly PropertyMetadata imageSize;
+        private static readonly PropertyMetadata ImageSize;
 
-        private static readonly PropertyMetadata timeDateStamp;
+        private static readonly PropertyMetadata TimeDateStamp;
 
-        private static readonly PropertyMetadata originalFileName;
+        private static readonly PropertyMetadata OriginalFileName;
 
         static KernelTraceControlImageIdParser()
         {
-            imageBase = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_POINTER, TDH_OUT_TYPE.TDH_OUTTYPE_HEXINT64, "ImageBase", false, false, 0, null);
-            imageSize = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UINT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "ImageSize", false, false, 0, null);
-            timeDateStamp = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UINT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "TimeDateStamp", false, false, 0, null);
-            originalFileName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "OriginalFileName", false, false, 0, null);
-            eventMetadata = new EventMetadata(
+            ImageBase = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_POINTER, TDH_OUT_TYPE.TDH_OUTTYPE_HEXINT64, "ImageBase", false, false, 0, null);
+            ImageSize = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UINT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "ImageSize", false, false, 0, null);
+            TimeDateStamp = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UINT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "TimeDateStamp", false, false, 0, null);
+            OriginalFileName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "OriginalFileName", false, false, 0, null);
+            EventMetadata = new EventMetadata(
                 new Guid("b3e675d7-2554-4f18-830b-2762732560de"),
                 36,
                 0,
                 "KernelTraceControl/ImageID",
-                new[] { imageBase, imageSize, timeDateStamp, originalFileName, });
+                new[] { ImageBase, ImageSize, TimeDateStamp, OriginalFileName, });
         }
 
-        public void Parse<T>(EventRecordReader reader, T writer, EventMetadata[] metadataArray, RuntimeEventMetadata runtimeMetadata) where T : IEtwWriter
+        public void Parse<T>(EventRecordReader reader, T writer, EventMetadata[] metadataArray, RuntimeEventMetadata runtimeMetadata)
+            where T : IEtwWriter
         {
-            writer.WriteEventBegin(eventMetadata, runtimeMetadata);
+            writer.WriteEventBegin(EventMetadata, runtimeMetadata);
 
-            writer.WritePropertyBegin(imageBase);
+            writer.WritePropertyBegin(ImageBase);
             writer.WritePointer(reader.ReadPointer());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(imageSize);
+            writer.WritePropertyBegin(ImageSize);
             writer.WriteUInt32(reader.ReadUInt32());
             writer.WritePropertyEnd();
 
             reader.ReadPointer();
 
-            writer.WritePropertyBegin(timeDateStamp);
+            writer.WritePropertyBegin(TimeDateStamp);
             writer.WriteUInt32(reader.ReadUInt32());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(originalFileName);
+            writer.WritePropertyBegin(OriginalFileName);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 

@@ -11,10 +11,10 @@
             this.EventPropertyOperands = operands;
         }
 
-        public int EventMetadataTableIndex { get; private set; }
+        public int EventMetadataTableIndex { get; }
 
-        public EventMetadata Metadata { get; private set; }
+        public EventMetadata Metadata { get; }
 
-        public IEnumerable<IEventTracePropertyOperand> EventPropertyOperands { get; private set; }
+        public IEnumerable<IEventTracePropertyOperand> EventPropertyOperands { get; }
     }
 }

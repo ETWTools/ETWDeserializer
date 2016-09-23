@@ -16,31 +16,31 @@
             this.Children = new List<IEventTracePropertyOperand>();
         }
 
-        public PropertyMetadata Metadata { get; private set; }
+        public PropertyMetadata Metadata { get; }
 
-        public int PropertyIndex { get; private set; }
+        public int PropertyIndex { get; }
 
-        public bool IsVariableArray { get; private set; }
+        public bool IsVariableArray { get; }
 
         public IEventTracePropertyOperand VariableArraySize { get; private set; }
 
-        public bool IsVariableLength { get; private set; }
+        public bool IsVariableLength { get; }
 
         public IEventTracePropertyOperand VariableLengthSize { get; private set; }
 
-        public bool IsFixedArray { get; private set; }
+        public bool IsFixedArray { get; }
 
         public int FixedArraySize { get; private set; }
 
-        public bool IsFixedLength { get; private set; }
+        public bool IsFixedLength { get; }
 
         public int FixedLengthSize { get; private set; }
 
-        public bool IsWbemXMLFragment { get; private set; }
+        public bool IsWbemXMLFragment { get; }
 
         public bool IsReferencedByOtherProperties { get; set; }
 
-        public List<IEventTracePropertyOperand> Children { get; private set; }
+        public List<IEventTracePropertyOperand> Children { get; }
 
         public void SetFixedArraySize(int fixedArraySize)
         {

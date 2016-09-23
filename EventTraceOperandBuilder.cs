@@ -22,7 +22,7 @@
             private readonly instrumentationManifest manifest;
 
             private readonly ushort eventId;
-            
+
             public TraceEventOperandBuilderFromXml(instrumentationManifest manifest, ushort eventId)
             {
                 this.manifest = manifest;
@@ -63,7 +63,7 @@
                                                         string version = definitionTypeItem.version;
                                                         string template = definitionTypeItem.template;
 
-                                                        string name = providerName + "/" + task + (opcode == string.Empty ? "" : "/" + opcode);
+                                                        string name = providerName + "/" + task + (opcode == string.Empty ? string.Empty : "/" + opcode);
                                                         var properties = new List<IEventTracePropertyOperand>();
 
                                                         foreach (var item in providerType.Items)
@@ -132,7 +132,7 @@
                 string task = this.BuildName("EventID", this.traceEventInfo->Id.ToString(), this.traceEventInfo->TaskNameOffset);
                 string opcode = this.BuildName("Opcode", this.traceEventInfo->Opcode.ToString(), this.traceEventInfo->OpcodeNameOffset);
 
-                var topLevelOperands = IterateProperties(buffer, 0, (int)traceEventInfo->TopLevelPropertyCount, eventPropertyInfoArr);
+                var topLevelOperands = this.IterateProperties(buffer, 0, (int)traceEventInfo->TopLevelPropertyCount, eventPropertyInfoArr);
                 return new EventTraceOperand(new EventMetadata(this.traceEventInfo->ProviderGuid, this.traceEventInfo->Id, this.traceEventInfo->Version, provider + "/" + task + "/" + opcode, this.flatPropertyList.Select(t => t.Metadata).ToArray()), eventMetadataTableIndex, topLevelOperands);
             }
 
@@ -160,7 +160,7 @@
                 for (int i = start; i < end; ++i)
                 {
                     var eventPropertyInfo = &eventPropertyInfoArr[i];
-                    string propertyName = new string((char*) &buffer[eventPropertyInfo->NameOffset]);
+                    string propertyName = new string((char*)&buffer[eventPropertyInfo->NameOffset]);
 
                     int structchildren = eventPropertyInfo->StructType.NumOfStructMembers;
                     bool isStruct = (eventPropertyInfo->Flags & PROPERTY_FLAGS.PropertyStruct) == PROPERTY_FLAGS.PropertyStruct;
@@ -188,7 +188,7 @@
                         mapName = new string((char*)&buffer[eventPropertyInfo->NonStructType.MapNameOffset]);
 
                         Tdh.GetEventMapInformation(&fakeEventRecord, mapName, mapBuffer, out bufferSize);
-                        mapBuffer = (byte*)Marshal.AllocHGlobal((int) bufferSize);
+                        mapBuffer = (byte*)Marshal.AllocHGlobal((int)bufferSize);
                         Tdh.GetEventMapInformation(&fakeEventRecord, mapName, mapBuffer, out bufferSize);
 
                         EVENT_MAP_INFO* mapInfo = (EVENT_MAP_INFO*)mapBuffer;
@@ -260,7 +260,7 @@
 
                     if ((eventPropertyInfo->Flags & PROPERTY_FLAGS.PropertyStruct) == PROPERTY_FLAGS.PropertyStruct)
                     {
-                        var innerProps = IterateProperties(
+                        var innerProps = this.IterateProperties(
                             buffer,
                             operands,
                             eventPropertyInfo->StructType.StructStartIndex,

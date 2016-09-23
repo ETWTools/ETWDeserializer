@@ -13,37 +13,90 @@
 
         public ushort Flags
         {
-            get { unsafe { return this.eventRecord->Flags; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->Flags;
+                }
+            }
         }
 
         public uint ThreadId
         {
-            get { unsafe { return this.eventRecord->ThreadId; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->ThreadId;
+                }
+            }
         }
 
         public uint ProcessId
         {
-            get { unsafe { return this.eventRecord->ProcessId; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->ProcessId;
+                }
+            }
         }
 
         public long Timestamp
         {
-            get { unsafe { return this.eventRecord->TimeStamp; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->TimeStamp;
+                }
+            }
         }
 
         public Guid ProviderId
         {
-            get { unsafe { return this.eventRecord->ProviderId; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->ProviderId;
+                }
+            }
         }
 
         public ushort EventId
         {
-            get { unsafe { return this.eventRecord->Id; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->Id;
+                }
+            }
         }
 
         public Guid ActivityId
         {
-            get { unsafe { return this.eventRecord->ActivityId; } }
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->ActivityId;
+                }
+            }
+        }
+
+        public ushort UserDataLength
+        {
+            get
+            {
+                unsafe
+                {
+                    return this.eventRecord->UserDataLength;
+                }
+            }
         }
 
         public Guid RelatedActivityId
@@ -81,9 +134,10 @@
                             var numberOfInstructionPointers = (extendedData[i].DataSize - sizeof(ulong)) / sizeof(uint);
                             return GetStacks32(numberOfInstructionPointers, ref extendedData[i], out matchId);
                         }
+
                         case Etw.EVENT_HEADER_EXT_TYPE_STACK_TRACE64:
                         {
-                            var numberOfInstructionPointers = (extendedData[i].DataSize - sizeof (ulong)) / sizeof(ulong);
+                            var numberOfInstructionPointers = (extendedData[i].DataSize - sizeof(ulong)) / sizeof(ulong);
                             return GetStacks64(numberOfInstructionPointers, ref extendedData[i], out matchId);
                         }
                     }
@@ -94,12 +148,7 @@
             }
         }
 
-        public ushort UserDataLength
-        {
-            get { unsafe { return this.eventRecord->UserDataLength; } }
-        }
-
-        private unsafe static ulong[] GetStacks64(int numberOfInstructionPointers, ref EVENT_HEADER_EXTENDED_DATA_ITEM extendedData, out ulong matchId)
+        private static unsafe ulong[] GetStacks64(int numberOfInstructionPointers, ref EVENT_HEADER_EXTENDED_DATA_ITEM extendedData, out ulong matchId)
         {
             var retArr = new ulong[numberOfInstructionPointers];
             matchId = *(ulong*)extendedData.DataPtr;
@@ -117,15 +166,15 @@
             return retArr;
         }
 
-        private unsafe static ulong[] GetStacks32(int numberOfInstructionPointers, ref EVENT_HEADER_EXTENDED_DATA_ITEM extendedData, out ulong matchId)
+        private static unsafe ulong[] GetStacks32(int numberOfInstructionPointers, ref EVENT_HEADER_EXTENDED_DATA_ITEM extendedData, out ulong matchId)
         {
             var retArr = new ulong[numberOfInstructionPointers];
             matchId = *(ulong*)extendedData.DataPtr;
 
             extendedData.DataPtr += sizeof(ulong);
-            
+
             var dataPtr = (int*)extendedData.DataPtr;
-            
+
             for (int j = 0; j < numberOfInstructionPointers; ++j)
             {
                 retArr[j] = (ulong)*dataPtr;

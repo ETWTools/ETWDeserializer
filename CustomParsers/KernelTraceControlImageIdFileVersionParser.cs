@@ -2,105 +2,106 @@
 {
     using System;
 
-    internal class KernelTraceControlImageIdFileVersionParser
+    internal sealed class KernelTraceControlImageIdFileVersionParser
     {
-        private static readonly EventMetadata eventMetadata;
+        private static readonly EventMetadata EventMetadata;
 
-        private static readonly PropertyMetadata imageSize;
+        private static readonly PropertyMetadata ImageSize;
 
-        private static readonly PropertyMetadata timeDateStamp;
+        private static readonly PropertyMetadata TimeDateStamp;
 
-        private static readonly PropertyMetadata origFileName;
+        private static readonly PropertyMetadata OrigFileName;
 
-        private static readonly PropertyMetadata fileDescription;
+        private static readonly PropertyMetadata FileDescription;
 
-        private static readonly PropertyMetadata fileVersion;
+        private static readonly PropertyMetadata FileVersion;
 
-        private static readonly PropertyMetadata binFileVersion;
+        private static readonly PropertyMetadata BinFileVersion;
 
-        private static readonly PropertyMetadata verLanguage;
+        private static readonly PropertyMetadata VerLanguage;
 
-        private static readonly PropertyMetadata productName;
+        private static readonly PropertyMetadata ProductName;
 
-        private static readonly PropertyMetadata companyName;
+        private static readonly PropertyMetadata CompanyName;
 
-        private static readonly PropertyMetadata productVersion;
+        private static readonly PropertyMetadata ProductVersion;
 
-        private static readonly PropertyMetadata fileId;
+        private static readonly PropertyMetadata FileId;
 
-        private static readonly PropertyMetadata programId;
+        private static readonly PropertyMetadata ProgramId;
 
         static KernelTraceControlImageIdFileVersionParser()
         {
-            imageSize = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_INT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "ImageSize", false, false, 0, null);
-            timeDateStamp = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_INT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "TimeDateStamp", false, false, 0, null);
-            origFileName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "OrigFileName", false, false, 0, null);
-            fileDescription = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "FileDescription", false, false, 0, null);
-            fileVersion = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "FileVersion", false, false, 0, null);
-            binFileVersion = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "BinFileVersion", false, false, 0, null);
-            verLanguage = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "VerLanguage", false, false, 0, null);
-            productName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "ProductName", false, false, 0, null);
-            companyName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "CompanyName", false, false, 0, null);
-            productVersion = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "ProductVersion", false, false, 0, null);
-            fileId = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "FileId", false, false, 0, null);
-            programId = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "ProgramId", false, false, 0, null);
-            eventMetadata = new EventMetadata(
+            ImageSize = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_INT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "ImageSize", false, false, 0, null);
+            TimeDateStamp = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_INT32, TDH_OUT_TYPE.TDH_OUTTYPE_UNSIGNEDINT, "TimeDateStamp", false, false, 0, null);
+            OrigFileName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "OrigFileName", false, false, 0, null);
+            FileDescription = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "FileDescription", false, false, 0, null);
+            FileVersion = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "FileVersion", false, false, 0, null);
+            BinFileVersion = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "BinFileVersion", false, false, 0, null);
+            VerLanguage = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "VerLanguage", false, false, 0, null);
+            ProductName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "ProductName", false, false, 0, null);
+            CompanyName = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "CompanyName", false, false, 0, null);
+            ProductVersion = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "ProductVersion", false, false, 0, null);
+            FileId = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "FileId", false, false, 0, null);
+            ProgramId = new PropertyMetadata(TDH_IN_TYPE.TDH_INTYPE_UNICODESTRING, TDH_OUT_TYPE.TDH_OUTTYPE_STRING, "ProgramId", false, false, 0, null);
+            EventMetadata = new EventMetadata(
                 new Guid("b3e675d7-2554-4f18-830b-2762732560de"),
                 64,
                 0,
                 "KernelTraceControl/ImageID/FileVersion",
-                new[] { imageSize, timeDateStamp, origFileName, fileDescription, fileVersion, binFileVersion, verLanguage, productName, companyName, productVersion, fileId, programId });
+                new[] { ImageSize, TimeDateStamp, OrigFileName, FileDescription, FileVersion, BinFileVersion, VerLanguage, ProductName, CompanyName, ProductVersion, FileId, ProgramId });
         }
 
-        public void Parse<T>(EventRecordReader reader, T writer, EventMetadata[] metadataArray, RuntimeEventMetadata runtimeMetadata) where T : IEtwWriter
+        public void Parse<T>(EventRecordReader reader, T writer, EventMetadata[] metadataArray, RuntimeEventMetadata runtimeMetadata)
+            where T : IEtwWriter
         {
-            writer.WriteEventBegin(eventMetadata, runtimeMetadata);
-            
-            writer.WritePropertyBegin(imageSize);
+            writer.WriteEventBegin(EventMetadata, runtimeMetadata);
+
+            writer.WritePropertyBegin(ImageSize);
             writer.WriteUInt64(reader.ReadUInt32());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(timeDateStamp);
+            writer.WritePropertyBegin(TimeDateStamp);
             writer.WriteUInt64(reader.ReadUInt32());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(origFileName);
+            writer.WritePropertyBegin(OrigFileName);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(fileDescription);
+            writer.WritePropertyBegin(FileDescription);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(fileVersion);
+            writer.WritePropertyBegin(FileVersion);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(binFileVersion);
+            writer.WritePropertyBegin(BinFileVersion);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(verLanguage);
+            writer.WritePropertyBegin(VerLanguage);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(productName);
+            writer.WritePropertyBegin(ProductName);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(companyName);
+            writer.WritePropertyBegin(CompanyName);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(productVersion);
+            writer.WritePropertyBegin(ProductVersion);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(fileId);
+            writer.WritePropertyBegin(FileId);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 
-            writer.WritePropertyBegin(programId);
+            writer.WritePropertyBegin(ProgramId);
             writer.WriteUnicodeString(reader.ReadUnicodeString());
             writer.WritePropertyEnd();
 

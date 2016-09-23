@@ -68,25 +68,25 @@
                 case TDH_IN_TYPE.TDH_INTYPE_ANSISTRING:
                     return Expression.Constant(0); // size check happens inside his reader
                 case TDH_IN_TYPE.TDH_INTYPE_INT8:
-                    return Expression.Constant(sizeof (sbyte));
+                    return Expression.Constant(sizeof(sbyte));
                 case TDH_IN_TYPE.TDH_INTYPE_UINT8:
-                    return Expression.Constant(sizeof (byte));
+                    return Expression.Constant(sizeof(byte));
                 case TDH_IN_TYPE.TDH_INTYPE_INT16:
-                    return Expression.Constant(sizeof (short));
+                    return Expression.Constant(sizeof(short));
                 case TDH_IN_TYPE.TDH_INTYPE_UINT16:
-                    return Expression.Constant(sizeof (ushort));
+                    return Expression.Constant(sizeof(ushort));
                 case TDH_IN_TYPE.TDH_INTYPE_INT32:
-                    return Expression.Constant(sizeof (int));
+                    return Expression.Constant(sizeof(int));
                 case TDH_IN_TYPE.TDH_INTYPE_UINT32:
-                    return Expression.Constant(sizeof (uint));
+                    return Expression.Constant(sizeof(uint));
                 case TDH_IN_TYPE.TDH_INTYPE_INT64:
-                    return Expression.Constant(sizeof (long));
+                    return Expression.Constant(sizeof(long));
                 case TDH_IN_TYPE.TDH_INTYPE_UINT64:
-                    return Expression.Constant(sizeof (ulong));
+                    return Expression.Constant(sizeof(ulong));
                 case TDH_IN_TYPE.TDH_INTYPE_FLOAT:
-                    return Expression.Constant(sizeof (float));
+                    return Expression.Constant(sizeof(float));
                 case TDH_IN_TYPE.TDH_INTYPE_DOUBLE:
-                    return Expression.Constant(sizeof (double));
+                    return Expression.Constant(sizeof(double));
                 case TDH_IN_TYPE.TDH_INTYPE_BOOLEAN:
                     return Expression.Constant(4); // this is because in Windows we have bools as ints
                 case TDH_IN_TYPE.TDH_INTYPE_BINARY:
@@ -102,9 +102,9 @@
                 case TDH_IN_TYPE.TDH_INTYPE_SID:
                     return Expression.Constant(0); // size check happens inside his reader
                 case TDH_IN_TYPE.TDH_INTYPE_HEXINT32:
-                    return Expression.Constant(sizeof (int));
+                    return Expression.Constant(sizeof(int));
                 case TDH_IN_TYPE.TDH_INTYPE_HEXINT64:
-                    return Expression.Constant(sizeof (long));
+                    return Expression.Constant(sizeof(long));
                 case TDH_IN_TYPE.TDH_INTYPE_COUNTEDSTRING:
                     return Expression.Constant(0); // size check happens inside his reader
                 case TDH_IN_TYPE.TDH_INTYPE_COUNTEDANSISTRING:
@@ -118,9 +118,9 @@
                 case TDH_IN_TYPE.TDH_INTYPE_NONNULLTERMINATEDANSISTRING:
                     return Expression.Constant(0); // size check happens inside his reader
                 case TDH_IN_TYPE.TDH_INTYPE_UNICODECHAR:
-                    return Expression.Constant(sizeof (char));
+                    return Expression.Constant(sizeof(char));
                 case TDH_IN_TYPE.TDH_INTYPE_ANSICHAR:
-                    return Expression.Constant(sizeof (byte));
+                    return Expression.Constant(sizeof(byte));
                 case TDH_IN_TYPE.TDH_INTYPE_SIZET:
                     return Expression.Constant(4); // TODO: FIXME with conditional
                 case TDH_IN_TYPE.TDH_INTYPE_HEXDUMP:

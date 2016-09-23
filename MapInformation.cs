@@ -14,9 +14,6 @@
 
         public string Name { get; private set; }
 
-        public string this[uint i]
-        {
-            get { return this.mapOfValues[i]; }
-        }       
+        public string this[uint i] => this.mapOfValues[i];
     }
 }

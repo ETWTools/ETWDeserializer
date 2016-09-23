@@ -10,7 +10,8 @@
     using System.Text.RegularExpressions;
     using CustomParsers;
 
-    public sealed class Deserializer<T> where T : IEtwWriter
+    public sealed class Deserializer<T>
+        where T : IEtwWriter
     {
         private static readonly Type ReaderType = typeof(EventRecordReader);
 
@@ -28,9 +29,9 @@
 
         private readonly List<EventMetadata> eventMetadataTableList = new List<EventMetadata>();
 
-        private EventMetadata[] eventMetadataTable;
-
         private readonly T writer;
+
+        private EventMetadata[] eventMetadataTable;
 
         public Deserializer(T writer)
         {
@@ -49,7 +50,7 @@
             eventRecord->UserDataFixed = eventRecord->UserData;
             var eventRecordReader = new EventRecordReader(eventRecord);
             var runtimeMetadata = new RuntimeEventMetadata(eventRecord);
-            
+
             var key = new TraceEventKey(
                 eventRecord->ProviderId,
                 (eventRecord->Flags & Etw.EVENT_HEADER_FLAG_CLASSIC_HEADER) != 0 ? eventRecord->Opcode : eventRecord->Id,
@@ -64,111 +65,6 @@
             {
                 this.SlowLookup(eventRecord, eventRecordReader, runtimeMetadata, ref key);
             }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private unsafe bool CustomParserLookup(EVENT_RECORD* eventRecord, ref TraceEventKey key)
-        {
-            bool success;
-
-            // events added by KernelTraceControl.dll (i.e. Microsoft tools like WPR and PerfView)
-            if (eventRecord->ProviderId == CustomParserGuids.KernelTraceControlGuid)
-            {
-                switch (eventRecord->Opcode)
-                {
-                    case 0:
-                        this.actionTable.Add(key, new KernelTraceControlImageIdParser().Parse);
-                        success = true;
-                        break;
-                    case 36:
-                        this.actionTable.Add(key, new KernelTraceControlDbgIdParser().Parse);
-                        success = true;
-                        break;
-                    case 64:
-                        this.actionTable.Add(key, new KernelTraceControlImageIdFileVersionParser().Parse);
-                        success = true;
-                        break;
-                    default:
-                        success = false;
-                        break;
-                }
-            }
-
-            // events by the Kernel Stack Walker (need this because the MOF events always says 32 stacks, but in reality there can be fewer or more
-            else if (eventRecord->ProviderId == CustomParserGuids.KernelStackWalkGuid)
-            {
-                if (eventRecord->Opcode == 32)
-                {
-                    this.actionTable.Add(key, new KernelStackWalkEventParser().Parse);
-                    success = true;
-                }
-                else
-                {
-                    success = false;
-                }
-            }
-            else
-            {
-                success = false;
-            }
-
-            return success;
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private unsafe void SlowLookup(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, RuntimeEventMetadata runtimeMetadata, ref TraceEventKey key)
-        {
-            if (this.CustomParserLookup(eventRecord, ref key))
-            {
-                return;
-            }
-
-            var operand = BuildOperand(eventRecord, eventRecordReader, this.eventMetadataTableList.Count);
-            if (operand != null)
-            {
-                this.eventMetadataTableList.Add(operand.Metadata);
-                this.eventMetadataTable = this.eventMetadataTableList.ToArray(); // TODO: Need to improve this
-
-                var eventRecordReaderParam = Expression.Parameter(ReaderType);
-                var eventWriterParam = Expression.Parameter(WriterType);
-                var eventMetadataTableParam = Expression.Parameter(EventMetadataArrayType);
-                var runtimeMetadataParam = Expression.Parameter(RuntimeMetadataType);
-
-                var parameters = new[] { eventRecordReaderParam, eventWriterParam, eventMetadataTableParam, runtimeMetadataParam };
-                var name = Regex.Replace(InvalidCharacters.Replace(operand.Metadata.Name, "_"), @"\s+", "_");
-                var body = EventTraceOperandExpressionBuilder.Build(operand, eventRecordReaderParam, eventWriterParam, eventMetadataTableParam, runtimeMetadataParam);
-                LambdaExpression expression = Expression.Lambda<Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>>(body, "Read_" + name, parameters);
-
-#if DEBUG
-                var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(name), AssemblyBuilderAccess.RunAndSave);
-#else 
-                var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(name), AssemblyBuilderAccess.RunAndCollect);
-#endif
-                var moduleBuilder = assemblyBuilder.DefineDynamicModule(name, name + ".dll");
-
-                var typeBuilder = moduleBuilder.DefineType(name, TypeAttributes.Public);
-                var methodBuilder = typeBuilder.DefineMethod("Read", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new[] { ReaderType, WriterType, EventMetadataArrayType, RuntimeMetadataType });
-
-                expression.CompileToMethod(methodBuilder);
-                var action = (Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>)Delegate.CreateDelegate(expression.Type, typeBuilder.CreateType().GetMethod("Read"));
-#if DEBUG
-                assemblyBuilder.Save(name + ".dll");
-#endif
-
-                this.actionTable.Add(key, action);
-                action(eventRecordReader, this.writer, this.eventMetadataTable, runtimeMetadata);
-            }
-        }
-
-        private unsafe IEventTraceOperand BuildOperand(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, int metadataTableIndex)
-        {
-            IEventTraceOperand operand;
-            if ((operand = BuildOperandFromTdh(eventRecord, metadataTableIndex)) == null)
-            {
-                operand = BuildOperandFromXml(eventRecord, this.eventSourceManifestCache, eventRecordReader, metadataTableIndex);
-            }
-
-            return operand;
         }
 
         private static unsafe IEventTraceOperand BuildOperandFromXml(EVENT_RECORD* eventRecord, Dictionary<Guid, EventSourceManifest> cache, EventRecordReader eventRecordReader, int metadataTableIndex)
@@ -249,6 +145,104 @@
             manifest.AddChunk(schemaChunk);
 
             return manifest;
+        }
+
+        private unsafe IEventTraceOperand BuildOperand(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, int metadataTableIndex)
+        {
+            IEventTraceOperand operand;
+            if ((operand = BuildOperandFromTdh(eventRecord, metadataTableIndex)) == null)
+            {
+                operand = BuildOperandFromXml(eventRecord, this.eventSourceManifestCache, eventRecordReader, metadataTableIndex);
+            }
+
+            return operand;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private unsafe bool CustomParserLookup(EVENT_RECORD* eventRecord, ref TraceEventKey key)
+        {
+            bool success;
+
+            // events added by KernelTraceControl.dll (i.e. Microsoft tools like WPR and PerfView)
+            if (eventRecord->ProviderId == CustomParserGuids.KernelTraceControlImageIdGuid)
+            {
+                switch (eventRecord->Opcode)
+                {
+                    case 0:
+                        this.actionTable.Add(key, new KernelTraceControlImageIdParser().Parse);
+                        success = true;
+                        break;
+                    case 36:
+                        this.actionTable.Add(key, new KernelTraceControlDbgIdParser().Parse);
+                        success = true;
+                        break;
+                    case 64:
+                        this.actionTable.Add(key, new KernelTraceControlImageIdFileVersionParser().Parse);
+                        success = true;
+                        break;
+                    default:
+                        success = false;
+                        break;
+                }
+            }
+
+            // events by the Kernel Stack Walker (need this because the MOF events always says 32 stacks, but in reality there can be fewer or more
+            else if (eventRecord->ProviderId == CustomParserGuids.KernelStackWalkGuid)
+            {
+                if (eventRecord->Opcode == 32)
+                {
+                    this.actionTable.Add(key, new KernelStackWalkEventParser().Parse);
+                    success = true;
+                }
+                else
+                {
+                    success = false;
+                }
+            }
+            else
+            {
+                success = false;
+            }
+
+            return success;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private unsafe void SlowLookup(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, RuntimeEventMetadata runtimeMetadata, ref TraceEventKey key)
+        {
+            if (this.CustomParserLookup(eventRecord, ref key))
+            {
+                return;
+            }
+
+            var operand = this.BuildOperand(eventRecord, eventRecordReader, this.eventMetadataTableList.Count);
+            if (operand != null)
+            {
+                this.eventMetadataTableList.Add(operand.Metadata);
+                this.eventMetadataTable = this.eventMetadataTableList.ToArray(); // TODO: Need to improve this
+
+                var eventRecordReaderParam = Expression.Parameter(ReaderType);
+                var eventWriterParam = Expression.Parameter(WriterType);
+                var eventMetadataTableParam = Expression.Parameter(EventMetadataArrayType);
+                var runtimeMetadataParam = Expression.Parameter(RuntimeMetadataType);
+
+                var parameters = new[] { eventRecordReaderParam, eventWriterParam, eventMetadataTableParam, runtimeMetadataParam };
+                var name = Regex.Replace(InvalidCharacters.Replace(operand.Metadata.Name, "_"), @"\s+", "_");
+                var body = EventTraceOperandExpressionBuilder.Build(operand, eventRecordReaderParam, eventWriterParam, eventMetadataTableParam, runtimeMetadataParam);
+                LambdaExpression expression = Expression.Lambda<Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>>(body, "Read_" + name, parameters);
+
+                var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(name), AssemblyBuilderAccess.RunAndCollect);
+                var moduleBuilder = assemblyBuilder.DefineDynamicModule(name, name + ".dll");
+
+                var typeBuilder = moduleBuilder.DefineType(name, TypeAttributes.Public);
+                var methodBuilder = typeBuilder.DefineMethod("Read", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new[] { ReaderType, WriterType, EventMetadataArrayType, RuntimeMetadataType });
+
+                expression.CompileToMethod(methodBuilder);
+                var action = (Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>)Delegate.CreateDelegate(expression.Type, typeBuilder.CreateType().GetMethod("Read"));
+
+                this.actionTable.Add(key, action);
+                action(eventRecordReader, this.writer, this.eventMetadataTable, runtimeMetadata);
+            }
         }
     }
 }

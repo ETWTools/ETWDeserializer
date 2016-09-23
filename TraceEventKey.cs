@@ -4,22 +4,22 @@
 
     internal struct TraceEventKey : IEquatable<TraceEventKey>
     {
-        private readonly Guid ProviderId;
+        private readonly Guid providerId;
 
-        private readonly ushort Id;
+        private readonly ushort id;
 
-        private readonly byte Version;
+        private readonly byte version;
 
         public TraceEventKey(Guid providerId, ushort id, byte version)
         {
-            this.ProviderId = providerId;
-            this.Id = id;
-            this.Version = version;
+            this.providerId = providerId;
+            this.id = id;
+            this.version = version;
         }
 
         public bool Equals(TraceEventKey other)
         {
-            return this.ProviderId.Equals(other.ProviderId) && this.Id == other.Id && this.Version == other.Version;
+            return this.providerId.Equals(other.providerId) && this.id == other.id && this.version == other.version;
         }
 
         public override bool Equals(object obj)
@@ -29,16 +29,16 @@
                 return false;
             }
 
-            return obj is TraceEventKey && Equals((TraceEventKey)obj);
+            return obj is TraceEventKey && this.Equals((TraceEventKey)obj);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                var hashCode = this.ProviderId.GetHashCode();
-                hashCode = (hashCode * 397) ^ this.Id.GetHashCode();
-                hashCode = (hashCode * 397) ^ this.Version.GetHashCode();
+                var hashCode = this.providerId.GetHashCode();
+                hashCode = (hashCode * 397) ^ this.id.GetHashCode();
+                hashCode = (hashCode * 397) ^ this.version.GetHashCode();
                 return hashCode;
             }
         }

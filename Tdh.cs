@@ -63,7 +63,6 @@
     }
 
     // Intypes and outtypes are defined in winmeta.xml.
-
     public enum TDH_IN_TYPE
     {
         TDH_INTYPE_NULL,
@@ -136,7 +135,7 @@
         TDH_OUTTYPE_WIN32ERROR,
         TDH_OUTTYPE_NTSTATUS,
         TDH_OUTTYPE_HRESULT, // End of winmeta outtypes.
-        TDH_OUTTYPE_CULTURE_INSENSITIVE_DATETIME, //Culture neutral datetime string.
+        TDH_OUTTYPE_CULTURE_INSENSITIVE_DATETIME, // Culture neutral datetime string.
         TDH_OUTTYPE_JSON,
         TDH_OUTTYPE_REDUCEDSTRING = 300, // Start of TDH outtypes for WBEM.
         TDH_OUTTYPE_NOPRINT
@@ -257,10 +256,10 @@
 
     internal static class Tdh
     {
-        [DllImport("tdh.dll", EntryPoint = "TdhGetEventInformation"), SuppressUnmanagedCodeSecurity]
-        internal unsafe static extern int GetEventInformation(EVENT_RECORD* pEvent, uint TdhContextCount, IntPtr pTdhContext, byte* pBuffer, out uint pBufferSize);
+        [DllImport("tdh.dll", EntryPoint = "TdhGetEventInformation")]
+        internal static extern unsafe int GetEventInformation(EVENT_RECORD* pEvent, uint TdhContextCount, IntPtr pTdhContext, byte* pBuffer, out uint pBufferSize);
 
-        [DllImport("tdh.dll", EntryPoint = "TdhGetEventMapInformation", CharSet = CharSet.Unicode), SuppressUnmanagedCodeSecurity]
-        internal unsafe static extern int GetEventMapInformation(EVENT_RECORD* pEvent, string pMapName, byte* pBuffer, out uint pBufferSize);
+        [DllImport("tdh.dll", EntryPoint = "TdhGetEventMapInformation", CharSet = CharSet.Unicode)]
+        internal static extern unsafe int GetEventMapInformation(EVENT_RECORD* pEvent, string pMapName, byte* pBuffer, out uint pBufferSize);
     }
 }
