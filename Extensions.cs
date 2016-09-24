@@ -1,11 +1,24 @@
 ﻿namespace ETWDeserializer
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq.Expressions;
     using System.Reflection;
 
     internal static class Extensions
     {
+        public static void AddOrUpdate<K, V>(this Dictionary<K, V> dict, K k, V v)
+        {
+            if (dict.ContainsKey(k))
+            {
+                dict[k] = v;
+            }
+            else
+            {
+                dict.Add(k, v);
+            }
+        }
+
         public static TDH_IN_TYPE ToTdhInType(string value)
         {
             value = value.ToLowerInvariant();

@@ -19,7 +19,7 @@
 
         private static readonly Type RuntimeMetadataType = typeof(RuntimeEventMetadata);
 
-        private static readonly Regex InvalidCharacters = new Regex("[\\/*?\"<>|\"-]");
+        private static readonly Regex InvalidCharacters = new Regex("[:\\/*?\"<>|\"-]");
 
         private static readonly Type WriterType = typeof(T);
 
@@ -147,10 +147,11 @@
             return manifest;
         }
 
-        private unsafe IEventTraceOperand BuildOperand(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, int metadataTableIndex)
+        private unsafe IEventTraceOperand BuildOperand(EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader, int metadataTableIndex, ref bool isSpecialKernelTraceMetaDataEvent)
         {
             if (eventRecord->ProviderId == CustomParserGuids.KernelTraceControlMetaDataGuid && eventRecord->Opcode == 32)
             {
+                isSpecialKernelTraceMetaDataEvent = true;
                 return EventTraceOperandBuilder.Build((TRACE_EVENT_INFO*)eventRecord->UserData, metadataTableIndex);
             }
 
@@ -220,7 +221,8 @@
                 return;
             }
 
-            var operand = this.BuildOperand(eventRecord, eventRecordReader, this.eventMetadataTableList.Count);
+            bool isSpecialKernelTraceMetaDataEvent = false;
+            var operand = this.BuildOperand(eventRecord, eventRecordReader, this.eventMetadataTableList.Count, ref isSpecialKernelTraceMetaDataEvent);
             if (operand != null)
             {
                 this.eventMetadataTableList.Add(operand.Metadata);
@@ -245,8 +247,16 @@
                 expression.CompileToMethod(methodBuilder);
                 var action = (Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>)Delegate.CreateDelegate(expression.Type, typeBuilder.CreateType().GetMethod("Read"));
 
-                this.actionTable.Add(key, action);
-                action(eventRecordReader, this.writer, this.eventMetadataTable, runtimeMetadata);
+                if (isSpecialKernelTraceMetaDataEvent)
+                {
+                    var e = (TRACE_EVENT_INFO*)eventRecord->UserDataFixed;
+                    this.actionTable.AddOrUpdate(new TraceEventKey(e->ProviderGuid, e->EventGuid == Guid.Empty ? e->Id : e->Opcode, e->Version), action);
+                }
+                else
+                {
+                    this.actionTable.Add(key, action);
+                    action(eventRecordReader, this.writer, this.eventMetadataTable, runtimeMetadata);
+                }
             }
         }
     }
