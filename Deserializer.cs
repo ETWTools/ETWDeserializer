@@ -106,6 +106,11 @@
             return traceEventOperand;
         }
 
+        private static unsafe IEventTraceOperand BuildUnknownOperand(EVENT_RECORD* eventRecord, int metadataTableIndex)
+        {
+            return new UnknownOperandBuilder(eventRecord->ProviderId, metadataTableIndex);
+        }
+
         private static unsafe EventSourceManifest CreateEventSourceManifest(Guid providerGuid, Dictionary<Guid, EventSourceManifest> cache, EVENT_RECORD* eventRecord, EventRecordReader eventRecordReader)
         {
             // EventSource Schema events have the following signature:
@@ -159,6 +164,11 @@
             if ((operand = BuildOperandFromTdh(eventRecord, metadataTableIndex)) == null)
             {
                 operand = BuildOperandFromXml(eventRecord, this.eventSourceManifestCache, eventRecordReader, metadataTableIndex);
+            }
+
+            if (operand == null && eventRecord->Id != 65534) // don't show manifest events
+            {
+                operand = BuildUnknownOperand(eventRecord, metadataTableIndex);
             }
 
             return operand;

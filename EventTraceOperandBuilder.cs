@@ -278,4 +278,19 @@
             }
         }
     }
+
+    internal sealed class UnknownOperandBuilder : IEventTraceOperand
+    {
+        public UnknownOperandBuilder(Guid providerGuid, int metadataTableIndex)
+        {
+            this.EventMetadataTableIndex = metadataTableIndex;
+            this.Metadata = new EventMetadata(providerGuid, 0, 0, "UnknownProvider(" + providerGuid.ToString() + ")", new PropertyMetadata[0]);
+        }
+
+        public int EventMetadataTableIndex { get; set; }
+
+        public EventMetadata Metadata { get; set; }
+
+        public IEnumerable<IEventTracePropertyOperand> EventPropertyOperands => Enumerable.Empty<IEventTracePropertyOperand>();
+    }
 }
