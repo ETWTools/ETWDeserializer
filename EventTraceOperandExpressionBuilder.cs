@@ -1,195 +1,272 @@
-﻿namespace ETWDeserializer
+namespace ETWDeserializer
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Linq.Expressions;
     using System.Reflection;
+    using System.Reflection.Emit;
 
     internal static class EventTraceOperandExpressionBuilder
     {
-        public static Expression Build(
+        public static void Build(
+            ILGenerator il,
             IEventTraceOperand operand,
-            ParameterExpression eventRecordReader,
-            ParameterExpression eventRecordWriter,
-            ParameterExpression eventMetadataTable,
-            ParameterExpression runtimeMetadata)
+            Type eventRecordReaderType,
+            Type eventRecordWriterType,
+            Type eventMetadataArrayType,
+            Type runtimeMetadataType)
         {
-            return new EventTraceOperandExpressionBuilderImpl().Build(operand, eventRecordReader, eventRecordWriter, eventMetadataTable, runtimeMetadata);
-        }
-
-        public static MethodCallExpression Call(this ParameterExpression instance, string methodName, params Expression[] arguments)
-        {
-            Type[] parameterTypes = arguments.Select(t => t.Type).ToArray();
-            var methodInfo = instance.Type.GetMethod(methodName, parameterTypes);
-            return Expression.Call(instance, methodInfo, arguments);
+            new EventTraceOperandILEmitter().Build(il, operand, eventRecordReaderType, eventRecordWriterType, eventMetadataArrayType, runtimeMetadataType);
         }
     }
 
-    internal sealed class EventTraceOperandExpressionBuilderImpl
+    internal sealed class EventTraceOperandILEmitter
     {
-        public Expression Build(IEventTraceOperand operand, ParameterExpression eventRecordReader, ParameterExpression eventRecordWriter, ParameterExpression eventMetadataTable, ParameterExpression runtimeMetadata)
+        public void Build(ILGenerator il, IEventTraceOperand operand, Type eventRecordReaderType, Type eventRecordWriterType, Type eventMetadataArrayType, Type runtimeMetadataType)
         {
-            var eventMetadata = Expression.Parameter(typeof(EventMetadata));
-            var properties = Expression.Parameter(typeof(PropertyMetadata[]));
+            // Declare local variables for eventMetadata and properties
+            // eventMetadata = eventMetadataTable[operand.EventMetadataTableIndex]
+            // properties = eventMetadata.Properties
+            var eventMetadata = il.DeclareLocal(typeof(EventMetadata));
+            var properties = il.DeclareLocal(typeof(PropertyMetadata[]));
 
-            var variables = new List<ParameterExpression>
-            {
-                eventMetadata,
-                properties
-            };
+            // eventMetadata = eventMetadataTable[operand.EventMetadataTableIndex]
+            il.Emit(OpCodes.Ldarg_2); // Load eventMetadataTable (parameter 2)
+            il.Emit(OpCodes.Ldc_I4, operand.EventMetadataTableIndex);
+            il.Emit(OpCodes.Ldelem_Ref);
+            il.Emit(OpCodes.Stloc, eventMetadata);
 
-            var expGenerator = new ExpressionGenerator(eventRecordReader, eventRecordWriter, properties);
-            var list = new List<Expression>
-            {
-                Expression.Assign(eventMetadata, Expression.ArrayAccess(eventMetadataTable, Expression.Constant(operand.EventMetadataTableIndex))),
-                Expression.Assign(properties, Expression.PropertyOrField(eventMetadata, "Properties")),
-                eventRecordWriter.Call("WriteEventBegin", eventMetadata, runtimeMetadata),
-                expGenerator.CodeGenerate(operand.EventPropertyOperands),
-                eventRecordWriter.Call("WriteEventEnd")
-            };
+            // properties = eventMetadata.Properties
+            il.Emit(OpCodes.Ldloc, eventMetadata);
+            var propertiesField = typeof(EventMetadata).GetField("Properties");
+            il.Emit(OpCodes.Ldfld, propertiesField);
+            il.Emit(OpCodes.Stloc, properties);
 
-            var returnExpression = Expression.Block(variables, list);
-            return returnExpression;
+            // eventRecordWriter.WriteEventBegin(eventMetadata, runtimeMetadata)
+            il.Emit(OpCodes.Ldarg_1); // Load eventRecordWriter (parameter 1)
+            il.Emit(OpCodes.Ldloc, eventMetadata);
+            il.Emit(OpCodes.Ldarg_3); // Load runtimeMetadata (parameter 3)
+            var writeEventBeginMethod = eventRecordWriterType.GetMethod("WriteEventBegin", new[] { typeof(EventMetadata), runtimeMetadataType });
+            il.Emit(OpCodes.Callvirt, writeEventBeginMethod);
+
+            // Generate code for all properties
+            var ilGenerator = new ILGenerator(il, eventRecordReaderType, eventRecordWriterType, properties);
+            ilGenerator.CodeGenerate(operand.EventPropertyOperands);
+
+            // eventRecordWriter.WriteEventEnd()
+            il.Emit(OpCodes.Ldarg_1); // Load eventRecordWriter (parameter 1)
+            var writeEventEndMethod = eventRecordWriterType.GetMethod("WriteEventEnd", Type.EmptyTypes);
+            il.Emit(OpCodes.Callvirt, writeEventEndMethod);
+
+            il.Emit(OpCodes.Ret);
         }
 
-        private sealed class ExpressionGenerator
+        private sealed class ILGenerator
         {
-            private readonly Dictionary<IEventTracePropertyOperand, Expression> operandReferenceTable = new Dictionary<IEventTracePropertyOperand, Expression>();
+            private readonly Dictionary<IEventTracePropertyOperand, LocalBuilder> operandReferenceTable = new Dictionary<IEventTracePropertyOperand, LocalBuilder>();
 
-            private readonly ParameterExpression eventRecordReader;
+            private readonly System.Reflection.Emit.ILGenerator il;
 
-            private readonly ParameterExpression eventRecordWriter;
+            private readonly Type eventRecordReaderType;
 
-            private readonly ParameterExpression properties;
+            private readonly Type eventRecordWriterType;
 
-            public ExpressionGenerator(ParameterExpression eventRecordReader, ParameterExpression eventRecordWriter, ParameterExpression properties)
+            private readonly LocalBuilder properties;
+
+            public ILGenerator(System.Reflection.Emit.ILGenerator il, Type eventRecordReaderType, Type eventRecordWriterType, LocalBuilder properties)
             {
-                this.eventRecordReader = eventRecordReader;
-                this.eventRecordWriter = eventRecordWriter;
+                this.il = il;
+                this.eventRecordReaderType = eventRecordReaderType;
+                this.eventRecordWriterType = eventRecordWriterType;
                 this.properties = properties;
             }
 
-            public Expression CodeGenerate(IEnumerable<IEventTracePropertyOperand> operands)
+            public void CodeGenerate(IEnumerable<IEventTracePropertyOperand> operands)
             {
-                var variables = new List<ParameterExpression>();
-                var list = new List<Expression>();
-
                 foreach (var operand in operands)
                 {
                     var inType = operand.Metadata.InType;
-                    Expression c; /* running expression for this operand */
 
-                    list.Add(this.eventRecordWriter.Call("WritePropertyBegin", Expression.ArrayAccess(this.properties, Expression.Constant(operand.PropertyIndex))));
+                    // eventRecordWriter.WritePropertyBegin(properties[operand.PropertyIndex])
+                    this.il.Emit(OpCodes.Ldarg_1); // Load eventRecordWriter (parameter 1)
+                    this.il.Emit(OpCodes.Ldloc, this.properties);
+                    this.il.Emit(OpCodes.Ldc_I4, operand.PropertyIndex);
+                    this.il.Emit(OpCodes.Ldelem_Ref);
+                    var writePropertyBeginMethod = this.eventRecordWriterType.GetMethod("WritePropertyBegin", new[] { typeof(PropertyMetadata) });
+                    this.il.Emit(OpCodes.Callvirt, writePropertyBeginMethod);
 
-                    /* if struct, recurse */
-                    if (operand.Children.Count > 0)
-                    {
-                        c = Expression.Block(
-                            this.eventRecordWriter.Call("WriteStructBegin"),
-                            this.CodeGenerate(operand.Children),
-                            this.eventRecordWriter.Call("WriteStructEnd"));
-                    }
-                    else
-                    {
-                        Expression readValue;
-
-                        /* otherwise, if operand has a length parameter, look it up or make constant */
-                        if (operand.IsVariableLength || operand.IsFixedLength)
-                        {
-                            var length = operand.IsVariableLength
-                                ? this.operandReferenceTable[operand.VariableLengthSize]
-                                : Expression.Constant(operand.FixedLengthSize);
-
-                            readValue = Call(this.eventRecordReader, inType.ReadMethodInfo(this.eventRecordReader.Type, length.Type), length);
-                        }
-
-                        /* otherwise, it's just a normal call, no args */
-                        else
-                        {
-                            readValue = Call(this.eventRecordReader, inType.ReadMethodInfo(this.eventRecordReader.Type));
-                        }
-
-                        /* save the operand because someone else maybe needing it */
-                        /* and change the running variable */
-                        if (operand.IsReferencedByOtherProperties)
-                        {
-                            var local = Expression.Parameter(inType.CSharpType(), operand.Metadata.Name);
-                            this.operandReferenceTable.Add(operand, local);
-                            variables.Add(local);
-                            c = Expression.Block(Expression.Assign(local, readValue), Call(this.eventRecordWriter, inType.WriteMethodInfo(this.eventRecordWriter.Type, local.Type), local));
-                        }
-                        else
-                        {
-                            c = Call(this.eventRecordWriter, inType.WriteMethodInfo(this.eventRecordWriter.Type, inType.CSharpType()), readValue);
-                        }
-                    }
-
+                    // Handle arrays vs single values
                     if (operand.IsVariableArray || operand.IsFixedArray)
                     {
-                        var loopVariable = Expression.Parameter(typeof(int));
-                        variables.Add(loopVariable);
+                        var loopVariable = this.il.DeclareLocal(typeof(int));
+                        var endVariable = this.il.DeclareLocal(typeof(int));
 
-                        var end = operand.IsVariableArray
-                            ? this.operandReferenceTable[operand.VariableArraySize]
-                            : Expression.Constant(operand.FixedArraySize);
+                        // Store the array size
+                        if (operand.IsVariableArray)
+                        {
+                            var arraySizeLocal = this.operandReferenceTable[operand.VariableArraySize];
+                            this.il.Emit(OpCodes.Ldloc, arraySizeLocal);
+                            ConvertIfNecessary(this.il, arraySizeLocal.LocalType, typeof(int));
+                            this.il.Emit(OpCodes.Stloc, endVariable);
+                        }
+                        else
+                        {
+                            this.il.Emit(OpCodes.Ldc_I4, operand.FixedArraySize);
+                            this.il.Emit(OpCodes.Stloc, endVariable);
+                        }
 
-                        var expr = (Expression)loopVariable;
-                        ConvertIfNecessary(ref expr, ref end);
-                        list.Add(this.eventRecordWriter.Call("WriteArrayBegin"));
-                        list.Add(For(loopVariable, Expression.Constant(0), Expression.LessThan(expr, end), Expression.AddAssign(loopVariable, Expression.Constant(1)), c));
-                        list.Add(this.eventRecordWriter.Call("WriteArrayEnd"));
+                        // eventRecordWriter.WriteArrayBegin()
+                        this.il.Emit(OpCodes.Ldarg_1);
+                        var writeArrayBeginMethod = this.eventRecordWriterType.GetMethod("WriteArrayBegin", Type.EmptyTypes);
+                        this.il.Emit(OpCodes.Callvirt, writeArrayBeginMethod);
+
+                        // for (loopVariable = 0; loopVariable < endVariable; loopVariable++)
+                        var loopStart = this.il.DefineLabel();
+                        var loopCondition = this.il.DefineLabel();
+
+                        // loopVariable = 0
+                        this.il.Emit(OpCodes.Ldc_I4_0);
+                        this.il.Emit(OpCodes.Stloc, loopVariable);
+                        this.il.Emit(OpCodes.Br, loopCondition);
+
+                        // Loop body start
+                        this.il.MarkLabel(loopStart);
+
+                        // Generate the code for each array element
+                        this.EmitOperandCode(operand, inType);
+
+                        // loopVariable++
+                        this.il.Emit(OpCodes.Ldloc, loopVariable);
+                        this.il.Emit(OpCodes.Ldc_I4_1);
+                        this.il.Emit(OpCodes.Add);
+                        this.il.Emit(OpCodes.Stloc, loopVariable);
+
+                        // Loop condition: loopVariable < endVariable
+                        this.il.MarkLabel(loopCondition);
+                        this.il.Emit(OpCodes.Ldloc, loopVariable);
+                        this.il.Emit(OpCodes.Ldloc, endVariable);
+                        this.il.Emit(OpCodes.Blt, loopStart);
+
+                        // eventRecordWriter.WriteArrayEnd()
+                        this.il.Emit(OpCodes.Ldarg_1);
+                        var writeArrayEndMethod = this.eventRecordWriterType.GetMethod("WriteArrayEnd", Type.EmptyTypes);
+                        this.il.Emit(OpCodes.Callvirt, writeArrayEndMethod);
                     }
                     else
                     {
-                        list.Add(c);
+                        // Not an array, generate code once
+                        this.EmitOperandCode(operand, inType);
                     }
 
-                    list.Add(this.eventRecordWriter.Call("WritePropertyEnd"));
+                    // eventRecordWriter.WritePropertyEnd()
+                    this.il.Emit(OpCodes.Ldarg_1);
+                    var writePropertyEndMethod = this.eventRecordWriterType.GetMethod("WritePropertyEnd", Type.EmptyTypes);
+                    this.il.Emit(OpCodes.Callvirt, writePropertyEndMethod);
                 }
-
-                return list.Count == 0 ? (Expression)Expression.Empty() : Expression.Block(variables, list);
             }
 
-            private static MethodCallExpression Call(ParameterExpression instance, MethodInfo methodInfo, params Expression[] arguments)
+            private void EmitOperandCode(IEventTracePropertyOperand operand, TDH_IN_TYPE inType)
             {
-                return Expression.Call(instance, methodInfo, arguments);
+                // if struct, recurse
+                if (operand.Children.Count > 0)
+                {
+                    // eventRecordWriter.WriteStructBegin()
+                    this.il.Emit(OpCodes.Ldarg_1);
+                    var writeStructBeginMethod = this.eventRecordWriterType.GetMethod("WriteStructBegin", Type.EmptyTypes);
+                    this.il.Emit(OpCodes.Callvirt, writeStructBeginMethod);
+
+                    // Recurse
+                    this.CodeGenerate(operand.Children);
+
+                    // eventRecordWriter.WriteStructEnd()
+                    this.il.Emit(OpCodes.Ldarg_1);
+                    var writeStructEndMethod = this.eventRecordWriterType.GetMethod("WriteStructEnd", Type.EmptyTypes);
+                    this.il.Emit(OpCodes.Callvirt, writeStructEndMethod);
+                }
+                else
+                {
+                    // Read the value
+                    if (operand.IsVariableLength || operand.IsFixedLength)
+                    {
+                        // eventRecordReader.ReadXXX(length)
+                        this.il.Emit(OpCodes.Ldarg_0); // Load eventRecordReader (parameter 0)
+
+                        if (operand.IsVariableLength)
+                        {
+                            // Load the variable length from operandReferenceTable
+                            var lengthLocal = this.operandReferenceTable[operand.VariableLengthSize];
+                            this.il.Emit(OpCodes.Ldloc, lengthLocal);
+                            var readMethod = inType.ReadMethodInfo(this.eventRecordReaderType, lengthLocal.LocalType);
+                            this.il.Emit(OpCodes.Callvirt, readMethod);
+                        }
+                        else
+                        {
+                            // Load the fixed length constant
+                            this.il.Emit(OpCodes.Ldc_I4, operand.FixedLengthSize);
+                            var readMethod = inType.ReadMethodInfo(this.eventRecordReaderType, typeof(int));
+                            this.il.Emit(OpCodes.Callvirt, readMethod);
+                        }
+                    }
+                    else
+                    {
+                        // eventRecordReader.ReadXXX()
+                        this.il.Emit(OpCodes.Ldarg_0); // Load eventRecordReader (parameter 0)
+                        var readMethod = inType.ReadMethodInfo(this.eventRecordReaderType);
+                        this.il.Emit(OpCodes.Callvirt, readMethod);
+                    }
+
+                    // If this operand is referenced by other properties, save it to a local variable
+                    if (operand.IsReferencedByOtherProperties)
+                    {
+                        var local = this.il.DeclareLocal(inType.CSharpType());
+                        this.il.Emit(OpCodes.Stloc, local);
+                        this.operandReferenceTable.Add(operand, local);
+
+                        // eventRecordWriter.WriteXXX(local)
+                        this.il.Emit(OpCodes.Ldarg_1); // Load eventRecordWriter (parameter 1)
+                        this.il.Emit(OpCodes.Ldloc, local);
+                        var writeMethod = inType.WriteMethodInfo(this.eventRecordWriterType, local.LocalType);
+                        this.il.Emit(OpCodes.Callvirt, writeMethod);
+                    }
+                    else
+                    {
+                        // The read value is on the stack, write it directly
+                        // eventRecordWriter.WriteXXX(readValue)
+                        var readValue = this.il.DeclareLocal(inType.CSharpType());
+                        this.il.Emit(OpCodes.Stloc, readValue);
+                        this.il.Emit(OpCodes.Ldarg_1); // Load eventRecordWriter (parameter 1)
+                        this.il.Emit(OpCodes.Ldloc, readValue);
+                        var writeMethod = inType.WriteMethodInfo(this.eventRecordWriterType, inType.CSharpType());
+                        this.il.Emit(OpCodes.Callvirt, writeMethod);
+                    }
+                }
             }
 
-            private static Expression For(ParameterExpression parameter, Expression initial, Expression condition, Expression increment, params Expression[] body)
+            private static void ConvertIfNecessary(System.Reflection.Emit.ILGenerator il, Type sourceType, Type targetType)
             {
-                var breakLabel = Expression.Label("break");
-                var loop = Expression.Block(
-                    new[] { parameter },
-                    Expression.Assign(parameter, initial),
-                    Expression.Loop(
-                        Expression.IfThenElse(
-                            condition,
-                            Expression.Block(
-                                body.Concat(new[] { increment })),
-                            Expression.Break(breakLabel)),
-                        breakLabel));
+                var sourceTypeCode = Type.GetTypeCode(sourceType);
+                var targetTypeCode = Type.GetTypeCode(targetType);
 
-                return loop;
-            }
-
-            private static void ConvertIfNecessary(ref Expression left, ref Expression right)
-            {
-                var leftTypeCode = Type.GetTypeCode(left.Type);
-                var rightTypeCode = Type.GetTypeCode(right.Type);
-
-                if (leftTypeCode == rightTypeCode)
+                if (sourceTypeCode == targetTypeCode)
                 {
                     return;
                 }
 
-                if (leftTypeCode > rightTypeCode)
+                // Emit conversion instruction
+                if (targetTypeCode == TypeCode.Int32)
                 {
-                    right = Expression.Convert(right, left.Type);
+                    il.Emit(OpCodes.Conv_I4);
                 }
-                else
+                else if (targetTypeCode == TypeCode.Int64)
                 {
-                    left = Expression.Convert(left, right.Type);
+                    il.Emit(OpCodes.Conv_I8);
+                }
+                else if (targetTypeCode == TypeCode.UInt32)
+                {
+                    il.Emit(OpCodes.Conv_U4);
+                }
+                else if (targetTypeCode == TypeCode.UInt64)
+                {
+                    il.Emit(OpCodes.Conv_U8);
                 }
             }
         }
