@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq.Expressions;
     using System.Reflection;
     using System.Reflection.Emit;
     using System.Runtime.CompilerServices;
@@ -238,15 +237,7 @@
                 this.eventMetadataTableList.Add(operand.Metadata);
                 this.eventMetadataTable = this.eventMetadataTableList.ToArray(); // TODO: Need to improve this
 
-                var eventRecordReaderParam = Expression.Parameter(ReaderType);
-                var eventWriterParam = Expression.Parameter(WriterType);
-                var eventMetadataTableParam = Expression.Parameter(EventMetadataArrayType);
-                var runtimeMetadataParam = Expression.Parameter(RuntimeMetadataType);
-
-                var parameters = new[] { eventRecordReaderParam, eventWriterParam, eventMetadataTableParam, runtimeMetadataParam };
                 var name = Regex.Replace(InvalidCharacters.Replace(operand.Metadata.Name, "_"), @"\s+", "_");
-                var body = EventTraceOperandExpressionBuilder.Build(operand, eventRecordReaderParam, eventWriterParam, eventMetadataTableParam, runtimeMetadataParam);
-                LambdaExpression expression = Expression.Lambda<Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>>(body, "Read_" + name, parameters);
 
                 var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(name), AssemblyBuilderAccess.RunAndCollect);
                 var moduleBuilder = assemblyBuilder.DefineDynamicModule(name, name + ".dll");
@@ -254,8 +245,10 @@
                 var typeBuilder = moduleBuilder.DefineType(name, TypeAttributes.Public);
                 var methodBuilder = typeBuilder.DefineMethod("Read", MethodAttributes.Public | MethodAttributes.Static, typeof(void), new[] { ReaderType, WriterType, EventMetadataArrayType, RuntimeMetadataType });
 
-                expression.CompileToMethod(methodBuilder);
-                var action = (Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>)Delegate.CreateDelegate(expression.Type, typeBuilder.CreateType().GetMethod("Read"));
+                var il = methodBuilder.GetILGenerator();
+                EventTraceOperandExpressionBuilder.Build(il, operand, ReaderType, WriterType, EventMetadataArrayType, RuntimeMetadataType);
+
+                var action = (Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>)Delegate.CreateDelegate(typeof(Action<EventRecordReader, T, EventMetadata[], RuntimeEventMetadata>), typeBuilder.CreateType().GetMethod("Read"));
 
                 if (isSpecialKernelTraceMetaDataEvent)
                 {
